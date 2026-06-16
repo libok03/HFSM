@@ -1,0 +1,21 @@
+<launch>
+  <node pkg="behavior_router"
+        type="behavior_router_node.py"
+        name="behavior_router_node"
+        output="screen">
+
+    <!-- Input topics -->
+    <param name="hfsm_state_topic" value="/hfsm/current_state" />
+    <param name="lane_change_direction_topic" value="/lane_change/recommended_direction" />
+
+    <!-- Speed profile [m/s] -->
+    <param name="speed_basic" value="5.0" />
+    <param name="speed_intersection" value="2.0" />
+    <param name="speed_obstacle" value="1.5" />
+    <param name="speed_lane_change" value="3.0" />
+    <param name="speed_avoidance" value="2.0" />
+    <param name="speed_stop" value="0.0" />
+
+    <param name="publish_hz" value="10.0" />
+  </node>
+</launch>

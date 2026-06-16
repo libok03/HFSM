@@ -1,0 +1,60 @@
+<launch>
+  <!-- ============================================================
+       hfsm_test.launch  (HFSM stack only)
+
+       Step 1 - Run this in terminal 1:
+         roslaunch hfsm_dummy_pub hfsm_test.launch
+
+       Step 2 - Run dummy publisher with keyboard in terminal 2:
+         source ~/HFSM/devel/setup.bash
+         rosrun hfsm_dummy_pub dummy_publisher_node.py
+
+       Step 3 - Monitor state in terminal 3:
+         rostopic echo /hfsm/current_state
+       ============================================================ -->
+
+  <!-- HFSM Decision Maker -->
+  <node pkg="hfsm_decision_maker" type="hfsm_node.py"
+        name="hfsm_decision_maker_node" output="screen">
+    <!-- Type: nav_msgs/Odometry -->
+    <param name="odom_topic"             value="/localization_kinematic_state"/>
+    <!-- Type: std_msgs/Float32 -->
+    <param name="ttc_topic"              value="/ttc"/>
+    <!-- Type: std_msgs/Bool -->
+    <param name="lane_status_topic"      value="/lane_status"/>
+    <!-- Type: std_msgs/String -->
+    <param name="planner_status_topic"   value="/local_planner/status"/>
+
+    <param name="TTC_ESTOP"               value="1.5"/>
+    <param name="TTC_LANE_CHANGE"         value="4.0"/>
+    <param name="TTC_SAFE"                value="5.0"/>
+    <param name="ESTOP_DIST"              value="5.0"/>
+    <param name="OBSTACLE_SAFE_DIST"      value="15.0"/>
+    <param name="INTERSECTION_ENTER_DIST" value="20.0"/>
+    <param name="PARKING_APPROACH_DIST"   value="30.0"/>
+    <param name="LC_FRONT_SAFE_DIST"      value="20.0"/>
+    <param name="LC_REAR_SAFE_DIST"       value="15.0"/>
+    <param name="LC_TTC_SAFE"             value="5.0"/>
+    <param name="PARKING_READY_SPEED"     value="0.5"/>
+    <param name="PARKING_POS_TOL"         value="0.5"/>
+    <param name="PARKING_YAW_TOL_DEG"     value="5.0"/>
+    <!-- Timeout fallbacks (sec) -->
+    <param name="parking_max_time"         value="60.0"/>
+    <param name="intersection_timeout"     value="30.0"/>
+  </node>
+
+  <!-- Behavior Router -->
+  <node pkg="behavior_router" type="behavior_router_node.py"
+        name="behavior_router_node" output="screen">
+    <!-- Type: std_msgs/String -->
+    <param name="hfsm_state_topic"        value="/hfsm/current_state"/>
+    <param name="lane_change_direction_topic" value="/lane_change/recommended_direction"/>
+    <param name="speed_basic"            value="10.0"/>
+    <param name="speed_intersection"     value="5.0"/>
+    <param name="speed_obstacle"         value="1.5"/>
+    <param name="speed_lane_change"      value="7.0"/>
+    <param name="speed_avoidance"        value="5.0"/>
+    <param name="speed_stop"             value="0.0"/>
+  </node>
+
+</launch>

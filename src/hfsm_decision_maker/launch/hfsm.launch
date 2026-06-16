@@ -1,0 +1,141 @@
+<launch>
+  <!-- Evaluator mode -->
+  <arg name="use_lanelet2_evaluator" default="true" />
+
+  <!-- Main HFSM Node -->
+  <node pkg="hfsm_decision_maker"
+        type="hfsm_node.py"
+        name="hfsm_decision_maker_node"
+        output="screen">
+
+    <!-- Topics -->
+    <param name="odom_topic" value="/localization_kinematic_state" />
+    <param name="ttc_topic" value="/ttc" />
+    <param name="lane_status_topic" value="/lane_status" />
+    <param name="planner_status_topic" value="/local_planner/status" />
+
+    <!-- TTC thresholds -->
+    <param name="TTC_ESTOP" value="1.5" />
+    <param name="TTC_LANE_CHANGE" value="4.0" />
+    <param name="TTC_SAFE" value="5.0" />
+
+    <!-- Obstacle thresholds -->
+    <param name="ESTOP_DIST" value="5.0" />
+    <param name="OBSTACLE_SAFE_DIST" value="15.0" />
+
+    <!-- Route thresholds -->
+    <param name="INTERSECTION_ENTER_DIST" value="20.0" />
+    <param name="PARKING_APPROACH_DIST" value="30.0" />
+
+    <!-- Lane change thresholds -->
+    <param name="LC_FRONT_SAFE_DIST" value="20.0" />
+    <param name="LC_REAR_SAFE_DIST" value="15.0" />
+    <param name="LC_TTC_SAFE" value="5.0" />
+
+    <!-- Parking thresholds -->
+    <param name="PARKING_READY_SPEED" value="0.5" />
+    <param name="PARKING_POS_TOL" value="0.5" />
+    <param name="PARKING_YAW_TOL_DEG" value="5.0" />
+  </node>
+
+
+  <!-- Lanelet2-based Evaluator -->
+  <group if="$(arg use_lanelet2_evaluator)">
+    <node pkg="hfsm_decision_maker"
+          type="lanelet2_event_evaluator_node.py"
+          name="lanelet2_event_evaluator_node"
+          output="screen">
+
+      <!-- Inputs -->
+      <param name="osm_file" value="$(find hfsm_decision_maker)/maps/k_city.osm" />
+      <param name="odom_topic" value="/localization_kinematic_state" />
+      <param name="obstacle_topic" value="/estimation/objects" />
+
+      <!-- OSM lat/lon to local meter-map transform -->
+      <param name="map_origin_lat" value="37.22922449" />
+      <param name="map_origin_lon" value="126.76910549" />
+
+      <!-- Use these if odometry map frame and converted OSM frame are offset -->
+      <param name="map_offset_x" value="0.0" />
+      <param name="map_offset_y" value="0.0" />
+      <param name="map_yaw_offset" value="0.0" />
+
+      <!-- Lane matching -->
+      <param name="lane_match_threshold" value="3.0" />
+      <param name="lane_width" value="3.5" />
+
+      <!-- Intersection -->
+      <param name="intersection_radius" value="8.0" />
+      <param name="default_dist_to_intersection" value="999.9" />
+
+      <!-- Lane change safety -->
+      <param name="LC_FRONT_SAFE_DIST" value="20.0" />
+      <param name="LC_REAR_SAFE_DIST" value="15.0" />
+      <param name="same_direction_yaw_threshold_deg" value="35.0" />
+
+      <!-- Parking is not implemented in first version -->
+      <param name="default_dist_to_parking_zone" value="999.9" />
+    </node>
+  </group>
+
+
+  <!-- Behavior Router -->
+  <node pkg="behavior_router"
+        type="behavior_router_node.py"
+        name="behavior_router_node"
+        output="screen">
+
+    <param name="hfsm_state_topic" value="/hfsm/current_state" />
+    <param name="lane_change_direction_topic" value="/lane_change/recommended_direction" />
+
+    <!-- Speed profiles [m/s] -->
+    <param name="speed_basic"        value="10.0" />
+    <param name="speed_intersection" value="5.0" />
+    <param name="speed_obstacle"     value="1.5" />
+    <param name="speed_lane_change"  value="7.0" />
+    <param name="speed_avoidance"    value="5.0" />
+    <param name="speed_stop"         value="0.0" />
+  </node>
+
+  <!-- Global Path Publisher -->
+  <node pkg="hfsm_decision_maker"
+        type="global_path_publisher_node.py"
+        name="global_path_publisher_node"
+        output="screen">
+
+    <param name="frame_id" value="map" />
+    <param name="path_length" value="300.0" />
+    <param name="point_interval" value="1.0" />
+    <param name="publish_hz" value="1.0" />
+  </node>
+
+  <!-- Obstacle Evaluator -->
+  <node pkg="hfsm_decision_maker"
+        type="obstacle_evaluator_node.py"
+        name="obstacle_evaluator_node"
+        output="screen">
+
+    <param name="odom_topic" value="/localization_kinematic_state" />
+    <param name="obstacle_topic" value="/estimation/objects" />
+    <param name="ego_path_half_width" value="1.75" />
+    <param name="obstacle_detect_dist" value="30.0" />
+    <param name="avoidance_possible_dist" value="7.0" />
+    <param name="ttc_safe_value" value="999.9" />
+  </node>
+
+  <!-- Local Planner -->
+  <node pkg="local_planner"
+        type="local_planner_node.py"
+        name="local_planner_node"
+        output="screen">
+
+    <param name="lookahead_distance" value="50.0" />
+    <param name="points_interval" value="0.5" />
+    <param name="hz" value="10.0" />
+    <param name="avoidance_offset" value="1.5" />
+    <param name="lane_change_offset" value="3.5" />
+    <param name="transition_s" value="25.0" />
+    <param name="avoidance_hold_s" value="10.0" />
+  </node>
+
+</launch>
