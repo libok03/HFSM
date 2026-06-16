@@ -25,6 +25,10 @@ class BehaviorRouterNode:
         self.speed_obstacle = rospy.get_param("~speed_obstacle", 1.5)
         self.speed_lane_change = rospy.get_param("~speed_lane_change", 3.0)
         self.speed_avoidance = rospy.get_param("~speed_avoidance", 2.0)
+        self.speed_parking_approach = rospy.get_param(
+            "~speed_parking_approach",
+            1.0
+        )
         self.speed_stop = rospy.get_param("~speed_stop", 0.0)
 
         self.publish_hz = rospy.get_param("~publish_hz", 10.0)
@@ -123,10 +127,10 @@ class BehaviorRouterNode:
             target_speed = self.speed_intersection
             stop_request = False
 
-        elif state == "OBSTACLE":
-            planner_mode = "LANE_FOLLOW"
-            target_speed = self.speed_obstacle
-            stop_request = False
+        elif state == "OBS_MANAGER":
+            planner_mode = "STOP"
+            target_speed = self.speed_stop
+            stop_request = True
 
         elif state == "LANE_CHANGE":
             planner_mode = "LANE_CHANGE"
@@ -146,6 +150,17 @@ class BehaviorRouterNode:
             target_speed = self.speed_avoidance
             avoidance_enable = True
             stop_request = False
+
+        elif state == "LANE_FOLLOWING_PARKING":
+            planner_mode = "LANE_FOLLOW"
+            target_speed = self.speed_parking_approach
+            stop_request = False
+
+        elif state == "PARKING_MANEUVER":
+            # Parking planner is not implemented yet. Hold the vehicle safely.
+            planner_mode = "STOP"
+            target_speed = self.speed_stop
+            stop_request = True
 
         elif state == "ESTOP":
             planner_mode = "STOP"

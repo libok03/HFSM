@@ -471,7 +471,7 @@ AND
 → ESTOP → LANE_CHANGE
 ```
 
-주의: 현재 코드의 `ESTOP → LANE_CHANGE` 분기에는 `recommended_direction` 검사가 아직 별도로 들어가 있지 않다. `should_enter_lane_change()`와 동일하게 보강하는 것이 좋다.
+`ESTOP → LANE_CHANGE` 직접 전이에도 `recommended_direction in ["LEFT", "RIGHT"]` 검사가 들어가므로 방향이 없으면 차선 변경으로 전이하지 않는다.
 
 ### 3.6 LANE_CHANGE
 
@@ -749,17 +749,12 @@ AND ego speed < 0.1
 | `INTERSECTION` | `LANE_FOLLOW` | 5.0 | False | 교차로 감속 주행 |
 | `LANE_CHANGE` | `LANE_CHANGE` | 7.0 | False | 차선 변경 |
 | `OBS_AVOIDANCE` | `AVOIDANCE` | 5.0 | False | local avoidance |
+| `OBS_MANAGER` | `STOP` | 0.0 | True | 장애물 decision state 중 보수 정지 |
 | `ESTOP` | `STOP` | 0.0 | True | 긴급정지 |
+| `LANE_FOLLOWING_PARKING` | `LANE_FOLLOW` | 3.0 | False | 주차 구역 접근 |
+| `PARKING_MANEUVER` | `STOP` | 0.0 | True | 주차 planner 미구현으로 정지 |
 
-주의할 점은 `hfsm_node.py`가 `OBS_MANAGER`를 publish할 수 있다는 점이다.
-현재 `behavior_router_node.py`는 `OBS_MANAGER`를 명시적으로 처리하지 않으므로 unknown state로 간주되어 기본 STOP 명령이 나간다.
-
-또한 주차 관련 state인 다음 두 state도 behavior router에 별도 처리가 없으면 STOP으로 처리될 수 있다.
-
-```text
-LANE_FOLLOWING_PARKING
-PARKING_MANEUVER
-```
+`PARKING_MANEUVER`는 아직 실제 주차 planner와 연결하지 않고 STOP으로 처리한다.
 
 ## 6. 현재 구조의 핵심 주의점
 
@@ -779,8 +774,7 @@ if vs.recommended_direction not in ["LEFT", "RIGHT"]:
 ### 6.2 `OBS_MANAGER`에 대한 Behavior Router 처리
 
 `OBS_MANAGER`는 decision state이지만 `/hfsm/current_state`로 publish된다.
-현재 router에서는 unknown state fallback으로 STOP이 나간다.
-보수적인 동작으로는 가능하지만, 로그 경고를 줄이고 의도를 명확히 하려면 다음 mapping을 추가하는 것이 좋다.
+현재 router에서는 의도를 명확히 하기 위해 다음 mapping을 명시한다.
 
 ```text
 OBS_MANAGER → STOP
@@ -788,16 +782,21 @@ OBS_MANAGER → STOP
 
 ### 6.3 Parking State에 대한 Behavior Router 처리
 
-`LANE_FOLLOWING_PARKING`, `PARKING_MANEUVER` state가 존재하지만, behavior router에서 해당 state를 별도로 처리하지 않으면 실제 주차 behavior로 연결되지 않는다.
-
-필요한 처리는 다음과 같다.
+주차 기능은 아직 실제 planner로 구현하지 않고 다음처럼 처리한다.
 
 ```text
 LANE_FOLLOWING_PARKING → LANE_FOLLOW + 저속
-PARKING_MANEUVER → PARKING planner mode
+PARKING_MANEUVER → STOP
 ```
 
-### 6.4 `heading_stable`, `yaw_stable`이 사실상 항상 True
+실제 주차를 구현하려면 `PARKING_MANEUVER → PARKING planner mode`와 주차 trajectory planner가 추가되어야 한다.
+
+### 6.4 `/global_path` 생성 확장
+
+현재 `global_path_publisher_node.py`는 통합 테스트용 직선 경로를 publish한다.
+실주행을 위해서는 OSM 또는 Lanelet2 routing 결과를 `/global_path`로 변환하는 노드로 확장해야 한다.
+
+### 6.5 `heading_stable`, `yaw_stable`이 사실상 항상 True
 
 현재 코드에서 `heading_stable`, `yaw_stable`은 초기값이 `True`이고, 별도 토픽으로 갱신되지 않는다.
 

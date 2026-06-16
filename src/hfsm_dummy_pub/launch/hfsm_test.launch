@@ -54,6 +54,7 @@
     <param name="speed_obstacle"         value="1.5"/>
     <param name="speed_lane_change"      value="7.0"/>
     <param name="speed_avoidance"        value="5.0"/>
+    <param name="speed_parking_approach" value="3.0"/>
     <param name="speed_stop"             value="0.0"/>
   </node>
 

@@ -517,6 +517,7 @@ class EStop(smach.State):
             vs.obs_exists and
             vs.obs_in_ego_path and
             vs.adjacent_lane_safe and
+            vs.recommended_direction in ["LEFT", "RIGHT"] and
             vs.speed < 0.1 and
             not is_front_distance_estop()
         ):

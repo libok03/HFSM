@@ -139,6 +139,17 @@ Lane change requires both:
 
 `OBS_AVOIDANCE_DONE` is published by `local_planner_node.py` only after the avoidance transition distance and hold distance are completed.
 
+Parking behavior is currently conservative:
+
+```text
+LANE_FOLLOWING_PARKING → LANE_FOLLOW at parking approach speed
+PARKING_MANEUVER → STOP
+```
+
+The actual parking planner mode is intentionally left as future work.
+
+The current `/global_path` publisher is a simple straight-path source for integration. It should be replaced later with an OSM or Lanelet2 route-based global path generator.
+
 ## Documentation
 
 - Detailed architecture: [`src/hfsm_decision_maker/hfsm_architecture.md`](src/hfsm_decision_maker/hfsm_architecture.md)
